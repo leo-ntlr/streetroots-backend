@@ -102,6 +102,13 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
   res.json({ id: user.id, username: user.username, role: user.role, email: user.email });
 });
 
+// Status
+app.get('/api/auth/status', authMiddleware, (req, res) => {
+  const user = db.users.find(u => u.id === req.user.id);
+  if (!user) return res.status(404).json({ error: 'Introuvable' });
+  res.json({ status: user.status });
+});
+
 // ============================================================
 // FOUNDER ROUTES
 // ============================================================
