@@ -314,6 +314,13 @@ app.ws('/ws', (ws, req) => {
         break;
       }
 
+      case 'FILE_SHARE': {
+        if (!userId) return;
+        const sender = db.users.find(u => u.id === userId);
+        broadcastToAll({ type: 'FILE_SHARE', from: userId, fromUsername: sender?.username, fileName: data.fileName, fileData: data.fileData, fileType: data.fileType });
+        break;
+      }
+
       case 'CONFERENCE_JOIN': {
         if (!userId) return;
         const username = db.users.find(u => u.id === userId)?.username;
