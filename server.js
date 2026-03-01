@@ -145,6 +145,15 @@ app.post('/api/founder/suspend/:id', authMiddleware, founderOnly, (req, res) => 
   res.json({ message: 'Compte suspendu' });
 });
 
+// Supprimer un compte définitivement
+app.delete('/api/founder/delete/:id', authMiddleware, founderOnly, (req, res) => {
+  const idx = db.users.findIndex(u => u.id === req.params.id && u.role !== 'founder');
+  if (idx === -1) return res.status(404).json({ error: 'Utilisateur introuvable' });
+  db.users.splice(idx, 1);
+  broadcastToAll({ type: 'USER_DELETED', userId: req.params.id });
+  res.json({ message: 'Compte supprimé' });
+});
+
 // Tous les membres
 app.get('/api/founder/members', authMiddleware, founderOnly, (req, res) => {
   res.json(db.users.filter(u => u.role !== 'founder').map(u => ({ id: u.id, username: u.username, email: u.email, role: u.role, status: u.status })));
@@ -302,6 +311,23 @@ app.ws('/ws', (ws, req) => {
             }
           });
         }
+        break;
+      }
+
+      case 'CONFERENCE_JOIN': {
+        if (!userId) return;
+        const username = db.users.find(u => u.id === userId)?.username;
+        clients.forEach((clientWs, clientId) => {
+          if (clientId !== userId) {
+            try { clientWs.send(JSON.stringify({ type: 'CONFERENCE_USER_JOINED', from: userId, fromUsername: username })); } catch {}
+          }
+        });
+        break;
+      }
+
+      case 'CONFERENCE_LEAVE': {
+        if (!userId) return;
+        broadcastToAll({ type: 'CONFERENCE_USER_LEFT', from: userId });
         break;
       }
 
